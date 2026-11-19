@@ -296,15 +296,15 @@ function drawTitleBlock(ctx, rect, state, w, h) {
   const { x, y, w: bw, h: bh } = rect;
   ctx.save();
   if (rect.halftone && state.halftone) drawHalftone(ctx, rect);
-  const scriptSize = bh * 0.3 * state.titleSize;
-  const titleSize = bh * 0.62 * state.titleSize;
-  const cy = y + bh * (0.62 - state.titlePos * 0.4);
-  drawScript(ctx, state.subtitle, x + bw * 0.5, cy - bh * 0.34 * state.titleSize, scriptSize, {
+  const scriptSize = bh * 0.26 * state.titleSize;
+  const titleSize = bh * 0.48 * state.titleSize;
+  const cy = y + bh * (0.52 - state.titlePos * 0.4);
+  drawScript(ctx, state.subtitle, x + bw * 0.5, cy - bh * 0.3 * state.titleSize, scriptSize, {
     glow: '#ff41b9',
     maxW: bw * 0.66,
   });
-  const fitted = fitFont(ctx, state.title, FONTS.title, bw * 0.9, bh * 0.6, titleSize, { tracking: 1 });
-  drawLettering(ctx, fitted.text, x + bw * 0.5, cy + bh * 0.16, fitted.size, FONTS.title, {
+  const fitted = fitFont(ctx, state.title, FONTS.title, bw * 0.9, bh * 0.5, titleSize, { tracking: 1 });
+  drawLettering(ctx, fitted.text, x + bw * 0.5, cy + bh * 0.14, fitted.size, FONTS.title, {
     fill: TITLE_FILL_STYLES[state.titleFill] === 'gradient' ? 'gradient' : '#ffffff',
     titleFill: state.titleFill,
     outlineW: fitted.size * 0.11,
@@ -313,10 +313,10 @@ function drawTitleBlock(ctx, rect, state, w, h) {
     drawStars(ctx, w, h, {
       count: state.stars,
       x: x + bw * 0.05,
-      y: y + bh * 0.82,
+      y: y + bh * 0.86,
       boxW: bw * 0.3,
       align: 'left',
-      size: 1,
+      size: 0.75,
     });
   }
   ctx.restore();
@@ -330,11 +330,11 @@ function drawTitleBlockBottom(ctx, rect, state) {
   grad.addColorStop(1, 'rgba(8,4,14,0)');
   ctx.fillStyle = grad;
   ctx.fillRect(x, y - bh * 0.4, bw, bh * 1.5);
-  const scriptSize = bh * 0.32 * state.titleSize;
-  const titleSize = bh * 0.68 * state.titleSize;
-  const cy = y + bh * (0.62 - state.titlePos * 0.4);
-  drawScript(ctx, state.subtitle, x + bw / 2, cy - bh * 0.36 * state.titleSize, scriptSize, { glow: '#ff41b9', maxW: bw * 0.7 });
-  const fitted = fitFont(ctx, state.title, FONTS.title, bw * 0.9, bh * 0.62, titleSize, { tracking: 1 });
+  const scriptSize = bh * 0.28 * state.titleSize;
+  const titleSize = bh * 0.5 * state.titleSize;
+  const cy = y + bh * (0.52 - state.titlePos * 0.4);
+  drawScript(ctx, state.subtitle, x + bw / 2, cy - bh * 0.3 * state.titleSize, scriptSize, { glow: '#ff41b9', maxW: bw * 0.7 });
+  const fitted = fitFont(ctx, state.title, FONTS.title, bw * 0.9, bh * 0.5, titleSize, { tracking: 1 });
   drawLettering(ctx, fitted.text, x + bw / 2, cy + bh * 0.14, fitted.size, FONTS.title, {
     titleFill: state.titleFill,
     outlineW: fitted.size * 0.11,
@@ -343,10 +343,10 @@ function drawTitleBlockBottom(ctx, rect, state) {
     drawStars(ctx, bw, bh, {
       count: state.stars,
       x: x + bw * 0.04,
-      y: y + bh * 0.78,
+      y: y + bh * 0.84,
       boxW: bw * 0.3,
       align: 'left',
-      size: 0.8,
+      size: 0.6,
     });
   }
   ctx.restore();
@@ -388,7 +388,10 @@ export function renderCover(canvas, state, images) {
     if (geo.title.bottom) drawTitleBlockBottom(ctx, geo.title, state);
     else drawTitleBlock(ctx, geo.title, state, w, h);
   }
-  if (state.ribbon) {
+  // Skip the ribbon when the title block occupies the lower part of the cover
+  // (it would collide with the lettering there).
+  const titleLow = geo.title && geo.title.y + geo.title.h / 2 > h * 0.55;
+  if (state.ribbon && !titleLow) {
     drawRibbon(ctx, { x: 0, y: 0, w, h }, state.ribbonText, {});
   }
   if (state.vignette) drawVignette(ctx, w, h, 0.5);

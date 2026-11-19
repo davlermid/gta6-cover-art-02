@@ -65,15 +65,18 @@ export const LAYOUTS = [
     slots: 4,
     panels(w, h) {
       const gx = g(w, h) * 1.6;
-      const hero = { x: w * 0.05, y: h * 0.05, w: w * 0.62 - gx / 2, h: h * 0.9 };
-      const sideW = w * 0.31 - gx / 2;
-      const sideH = (h * 0.9 - gx * 2) / 3;
+      const titleH = h * 0.24;
+      const top = h * 0.04;
+      const bodyY = top;
+      const bodyH = h - titleH - gx - h * 0.04;
+      const hero = { x: w * 0.04, y: bodyY, w: w * 0.6 - gx / 2, h: bodyH };
+      const sideW = w * 0.3 - gx / 2;
+      const sideH = (bodyH - gx * 2) / 3;
       const sideX = hero.x + hero.w + gx;
       const panels = [hero];
       for (let i = 0; i < 3; i++)
-        panels.push({ x: sideX, y: h * 0.05 + i * (sideH + gx), w: sideW, h: sideH });
-      const title = { x: sideX - gx * 0.2, y: h * 0.05 + 3 * (sideH + gx) - gx + h * 0.02, w: sideW, h: 0 };
-      title.h = h * 0.9 - 3 * sideH - 2 * gx;
+        panels.push({ x: sideX, y: bodyY + i * (sideH + gx), w: sideW, h: sideH });
+      const title = { x: w * 0.04, y: bodyY + bodyH + gx, w: w * 0.92, h: titleH, halftone: true };
       return { panels, title };
     },
   },

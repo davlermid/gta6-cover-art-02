@@ -42,11 +42,13 @@ function panelRects() {
 
 function screenRect(r) {
   const cw = canvas.clientWidth, ch = canvas.clientHeight;
+  const scaleX = cw / canvas.width, scaleY = ch / canvas.height;
   return {
     x: (r.x / canvas.width) * cw,
     y: (r.y / canvas.height) * ch,
     w: (r.w / canvas.width) * cw,
     h: (r.h / canvas.height) * ch,
+    scaleX, scaleY,
     rot: r.rot || 0,
   };
 }
@@ -64,6 +66,7 @@ function updateOverlay() {
     d.style.width = s.w + 'px';
     d.style.height = s.h + 'px';
     d.dataset.i = i;
+    if (r.rot) d.style.transform = `rotate(${r.rot}rad)`;
     overlay.appendChild(d);
   });
 }
@@ -342,9 +345,10 @@ function wirePanels() {
     if (!dragging) return;
     const slot = state.slots[selected];
     if (!slot) return;
-    const cw = canvas.clientWidth, chh = canvas.clientHeight;
-    const dx = (e.clientX - startX) / cw;
-    const dy = (e.clientY - startY) / chh;
+    // Pan in cover-pixel units so it feels identical at any preview scale.
+    const s = screenRect(panelRects()[selected] || { x: 0, y: 0, w: 1, h: 1 });
+    const dx = ((e.clientX - startX) / s.scaleX) / canvas.width;
+    const dy = ((e.clientY - startY) / s.scaleY) / canvas.height;
     if (Math.abs(dx) + Math.abs(dy) > 0.002) moved = true;
     slot.pan = { x: startPan.x + dx, y: startPan.y + dy };
     draw();
@@ -428,6 +432,7 @@ async function shotCover() {
 
 function markShotsReady() {
   document.body.dataset.ready = '1';
+  window.__shotReady = true;
 }
 
 boot();
