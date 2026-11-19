@@ -12,6 +12,20 @@ export const SIZES = [
   { key: 'story', label: '1080 × 1920', w: 1080, h: 1920 },
 ];
 
+// 9-slot default: every sample used, repeats get different crops so the grid
+// reads as a set of character vignettes rather than copy-paste tiles.
+const DEFAULT_ASSIGNMENT = [
+  ['pier', 1, 0, 0],
+  ['woman-car', 1.18, 0.04, -0.03],
+  ['friends-neon', 1.08, 0, 0.05],
+  ['man-rooftop', 1.12, -0.05, 0],
+  ['boulevard', 1, 0, 0],
+  ['man-pier', 1.22, 0.05, 0.04],
+  ['friends-neon', 1.35, -0.06, -0.05],
+  ['man-pier', 1.06, 0, -0.06],
+  ['woman-car', 1.28, -0.04, 0.05],
+];
+
 const DEFAULT_STATE = () => ({
   layout: 'grid9',
   grade: 'vice-sunset',
@@ -28,7 +42,9 @@ const DEFAULT_STATE = () => ({
   halftone: true,
   border: 'white',
   gap: 1,
-  slots: SAMPLES.map((name) => ({ photo: name, zoom: 1, pan: { x: 0, y: 0 }, grade: null, border: null })),
+  slots: DEFAULT_ASSIGNMENT.map(([photo, zoom, px, py]) => ({
+    photo, zoom, pan: { x: px, y: py }, grade: null, border: null,
+  })),
 });
 
 export function defaultState() {

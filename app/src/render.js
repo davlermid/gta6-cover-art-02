@@ -3,6 +3,7 @@
 // on-screen preview and the exported PNG are identical by construction.
 
 import { applyGrade } from './grades.js';
+import { layoutByKey } from './layouts.js';
 
 // ---------------------------------------------------------------------------
 // Fonts (loaded via @font-face in style.css, local TTFs only)
@@ -94,9 +95,16 @@ function drawScript(ctx, text, cx, cy, size, opts) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.font = `${size}px ${FONTS.script}`;
+  // Shrink to fit the available width when a long subtitle is used.
+  const maxW = (opts.maxW || Infinity);
+  let s = size;
+  while (ctx.measureText(text).width > maxW && s > 8) {
+    s *= 0.94;
+    ctx.font = `${s}px ${FONTS.script}`;
+  }
   if (opts.glow) {
     ctx.shadowColor = opts.glow;
-    ctx.shadowBlur = size * 0.4;
+    ctx.shadowBlur = s * 0.4;
   }
   ctx.fillStyle = opts.fill || '#ff9ad5';
   for (let i = 0; i < 2; i++) ctx.fillText(text, cx, cy);
@@ -179,14 +187,26 @@ function drawHalftone(ctx, rect) {
   ctx.restore();
 }
 
+// Deterministic PRNG so renders (and screenshots) are reproducible.
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a |= 0; a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 function drawGrain(ctx, w, h, amount) {
   ctx.save();
   ctx.globalAlpha = amount;
+  const rand = mulberry32(0x5eed + w * 7 + h);
   const cell = Math.max(1, Math.round(Math.min(w, h) / 360));
   for (let y = 0; y < h; y += cell) {
     for (let x = 0; x < w; x += cell) {
-      if (Math.random() < 0.14) {
-        const v = Math.random();
+      if (rand() < 0.14) {
+        const v = rand();
         ctx.fillStyle = v > 0.5 ? '#ffffff' : '#000000';
         ctx.fillRect(x, y, cell, cell);
       }
@@ -243,7 +263,7 @@ function drawRibbon(ctx, rect, text, opts) {
   const hh = h * 0.085;
   const rw = w * 0.42;
   const rx = x + w - rw - w * 0.03;
-  const ry = y + h * 0.03;
+  const ry = y + h - hh - h * 0.03; // bottom-right: keeps clear of the title block
   ctx.save();
   ctx.translate(rx + rw / 2, ry + hh / 2);
   ctx.rotate(-0.035);
@@ -276,11 +296,12 @@ function drawTitleBlock(ctx, rect, state, w, h) {
   const { x, y, w: bw, h: bh } = rect;
   ctx.save();
   if (rect.halftone && state.halftone) drawHalftone(ctx, rect);
-  const scriptSize = bh * 0.32 * state.titleSize;
+  const scriptSize = bh * 0.3 * state.titleSize;
   const titleSize = bh * 0.62 * state.titleSize;
   const cy = y + bh * (0.62 - state.titlePos * 0.4);
   drawScript(ctx, state.subtitle, x + bw * 0.5, cy - bh * 0.34 * state.titleSize, scriptSize, {
     glow: '#ff41b9',
+    maxW: bw * 0.66,
   });
   const fitted = fitFont(ctx, state.title, FONTS.title, bw * 0.9, bh * 0.6, titleSize, { tracking: 1 });
   drawLettering(ctx, fitted.text, x + bw * 0.5, cy + bh * 0.16, fitted.size, FONTS.title, {
@@ -309,10 +330,10 @@ function drawTitleBlockBottom(ctx, rect, state) {
   grad.addColorStop(1, 'rgba(8,4,14,0)');
   ctx.fillStyle = grad;
   ctx.fillRect(x, y - bh * 0.4, bw, bh * 1.5);
-  const scriptSize = bh * 0.34 * state.titleSize;
+  const scriptSize = bh * 0.32 * state.titleSize;
   const titleSize = bh * 0.68 * state.titleSize;
   const cy = y + bh * (0.62 - state.titlePos * 0.4);
-  drawScript(ctx, state.subtitle, x + bw / 2, cy - bh * 0.36 * state.titleSize, scriptSize, { glow: '#ff41b9' });
+  drawScript(ctx, state.subtitle, x + bw / 2, cy - bh * 0.36 * state.titleSize, scriptSize, { glow: '#ff41b9', maxW: bw * 0.7 });
   const fitted = fitFont(ctx, state.title, FONTS.title, bw * 0.9, bh * 0.62, titleSize, { tracking: 1 });
   drawLettering(ctx, fitted.text, x + bw / 2, cy + bh * 0.14, fitted.size, FONTS.title, {
     titleFill: state.titleFill,
@@ -344,7 +365,7 @@ export function renderCover(canvas, state, images) {
   ctx.fillRect(0, 0, w, h);
 
   const gap = state.gap / 100; // slider 0..3
-  const layout = state.layoutDef;
+  const layout = state.layoutDef || layoutByKey(state.layout);
   const geo = layout.panels(w, h);
   const baseGap = Math.min(w, h) * 0.006 * 1.6;
   const border = state.border;

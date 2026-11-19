@@ -87,6 +87,13 @@ function buildControls() {
     o.textContent = gr.label;
     gradeSel.appendChild(o);
   });
+  const panelGradeSel = $('#panelGrade');
+  GRADES.forEach((gr) => {
+    const o = document.createElement('option');
+    o.value = gr.key;
+    o.textContent = gr.label;
+    panelGradeSel.appendChild(o);
+  });
   const sizeSel = $('#size');
   SIZES.forEach((s) => {
     const o = document.createElement('option');
